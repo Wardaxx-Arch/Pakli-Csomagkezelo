@@ -1,0 +1,21 @@
+#!/bin/bash
+
+echo "⬇️ Letöltöm a legfrissebb Pakli verziót..."
+URL="https://raw.githubusercontent.com/Wardaxx-Arch/Pakli-Csomagkezelo/main/pakli"
+curl -fsSL "$URL" -o /tmp/pakli
+
+if [ $? -ne 0 ]; then
+    echo "❌ Sikertelen letöltés!"
+    exit 1
+fi
+
+chmod +x /tmp/pakli
+echo "📂 Telepítés /usr/local/bin/ alá..."
+
+sudo cp /tmp/pakli /usr/local/bin/pakli
+
+if [ $? -eq 0 ]; then
+    echo "✅ A Pakli sikeresen telepítve!"
+else
+    echo "❌ Nem sikerült telepíteni. Lehet, hogy nincs jogosultságod?"
+fi

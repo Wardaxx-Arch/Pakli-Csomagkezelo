@@ -1,0 +1,116 @@
+#!/bin/bash
+
+# Yay telepítő függvény
+telepits_yay() {
+    echo "🔧 Yay telepítése folyamatban..."
+    sudo pacman -S --needed --noconfirm base-devel git
+    git clone https://aur.archlinux.org/yay.git /tmp/yay
+    cd /tmp/yay || { echo "❌ Nem sikerült a yay könyvtárba lépni."; return 1; }
+    makepkg -si --noconfirm || { echo "❌ A yay telepítése sikertelen."; return 1; }
+    cd - >/dev/null
+    rm -rf /tmp/yay
+    echo "✅ Yay telepítve."
+}
+
+# GitHub repo raw URL a legfrissebb verzióhoz
+GITHUB_RAW_URL="https://raw.githubusercontent.com/Wardaxx-Arch/Pakli-Csomagkezelo/main/pakli"
+
+# Frissítés ellenőrző és letöltő függvény
+frissites() {
+    echo "🔍 Frissítés keresése a GitHubon..."
+    # Letöltjük a GitHub verziót ideiglenesen
+    curl -s -o /tmp/pakli_latest "$GITHUB_RAW_URL"
+    if [ ! -s /tmp/pakli_latest ]; then
+        echo "❌ Nem sikerült letölteni a frissítést."
+        return 1
+    fi
+
+    # Összehasonlítjuk az aktuális fájllal
+    if ! cmp -s "$0" /tmp/pakli_latest; then
+        echo "⬆️ Új verzió elérhető! Frissítés telepítése..."
+        sudo cp /tmp/pakli_latest "$0"
+        sudo chmod +x "$0"
+        echo "✅ Frissítés kész."
+    else
+        echo "✅ Már a legfrissebb verziót használod."
+    fi
+
+    rm /tmp/pakli_latest
+}
+
+if [ $# -eq 0 ]; then
+    echo "Használat: pakli [parancs] [csomagok]"
+    echo "Használható parancsok: -Syu, -Ss, -S, -R, -Update, -h"
+    exit 1
+fi
+
+case "$1" in
+    -Syu)
+        echo "🔄 Rendszer frissítése pacman-nel..."
+        sudo pacman -Syu
+        ;;
+
+    -Ss)
+        shift
+        if [ $# -eq 0 ]; then
+            echo "Kérlek adj meg egy keresési kulcsszót."
+            exit 1
+        fi
+        pacman -Ss "$@" || yay -Ss "$@"
+        ;;
+
+    -S)
+        shift
+        if [ $# -eq 0 ]; then
+            echo "Kérlek adj meg legalább egy csomagot a telepítéshez."
+            exit 1
+        fi
+        echo "📦 Telepítem: $@"
+        if sudo pacman -S "$@"; then
+            exit 0
+        else
+            if ! command -v yay >/dev/null 2>&1; then
+                read -p "⚠️ Nem található yay csomagkezelő. Telepítsem? (y/n): " valasz
+                if [[ "$valasz" =~ ^[Yy]$ ]]; then
+                    telepits_yay || { echo "❌ Nem sikerült a yay telepítése."; exit 1; }
+                else
+                    echo "⛔ A yay nincs telepítve, kilépek."
+                    exit 1
+                fi
+            fi
+            yay -S "$@"
+        fi
+        ;;
+
+    -R)
+        shift
+        if [ $# -eq 0 ]; then
+            echo "Kérlek adj meg legalább egy csomagot az eltávolításhoz."
+            exit 1
+        fi
+        echo "🗑️ Eltávolítom: $@"
+        sudo pacman -R "$@"
+        ;;
+
+    -Update)
+        frissites
+        ;;
+
+    -h|--help)
+        echo "Pakli - Egyszerű Arch alapú csomagkezelő"
+        echo ""
+        echo "Használat:"
+        echo "  pakli -Syu           Rendszer frissítése"
+        echo "  pakli -Ss kereső     Csomag keresése"
+        echo "  pakli -S csomagok    Csomag(ok) telepítése"
+        echo "  pakli -R csomagok    Csomag(ok) eltávolítása"
+        echo "  pakli -Update        Pakli frissítése a GitHubról"
+        echo "  pakli -h             Súgó megjelenítése"
+        ;;
+
+    *)
+        echo "Ismeretlen parancs: $1"
+        echo "Használd a -h opciót a segítségért."
+        exit 1
+        ;;
+esac
