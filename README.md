@@ -1,60 +1,46 @@
-# pakli
+# Pakli - Egyszerű Arch alapú csomagkezelő
 
-**pakli** egy egyszerű Linux parancssoros eszköz, amely különböző parancsokat tartalmaz egy saját, szórakoztató CLI-élményhez.
+Ez egy egyszerű, könnyen használható csomagkezelő script Arch Linux és Arch alapú disztribúciók számára, amely automatikusan kezeli a `pacman` és az `yay` csomagokat.
 
-## 📦 Telepítés
+---
+
+## Funkciók
+
+- Rendszer frissítése (`pakli -Syu`)
+- Csomag keresése (`pakli -Ss keresőszó`)
+- Csomag telepítése (`pakli -S csomagnevek`)
+- Csomag eltávolítása (`pakli -R csomagnevek`)
+- Csomagkezelő frissítése a GitHub-ról (`pakli -Update`)
+- Súgó megjelenítése (`pakli -h`)
+
+---
+
+## Telepítés
 
 1. Klónozd a repót:
+    ```bash
+    git clone https://github.com/Wardaxx-Arch/Pakli-Csomagkezelo.git
+    cd Pakli-Csomagkezelo
+    ```
+
+2. Add futtatási jogosultságot a `pakli` scriptnek:
+    ```bash
+    chmod +x pakli
+    ```
+
+3. Másold a `pakli` scriptet egy PATH-ban lévő helyre, pl.:
+    ```bash
+    sudo cp pakli /usr/local/bin/
+    ```
+
+---
+
+## Használat
 
 ```bash
-git clone https://github.com/Wardaxx/pakli.git
-cd pakli
-```
-
-2. Futtasd a telepítő scriptet:
-
-```bash
-bash install.sh
-```
-
-Ez bemásolja a `pakli` parancsot a `/usr/local/bin/` mappába, így bárhonnan elérhetővé válik.
-
-## 🧾 Használat
-
-A help megjelenítéséhez:
-
-```bash
-pakli -h
-```
-
-Ha csak `pakli`-t írsz be, akkor is a help szöveg jelenik meg.
-
-Példa parancs:
-
-```bash
-pakli -Ss keresett_kifejezes
-```
-
-## 🔄 Frissítés
-
-A legfrissebb verzió eléréséhez:
-
-```bash
-pakli update
-```
-
-Ez automatikusan letölti a legújabb verziót a GitHub-ról és újratelepíti.
-
-## 📁 Tartalom
-
-- `pakli` – maga a parancs script
-- `paklihelp.txt` – súgó / help szöveg
-- `install.sh` – telepítő script
-
-## ❗ Figyelmeztetés
-
-A parancs sudo-jogosultságokat igényelhet egyes telepítési lépésekhez.
-
-## 📜 Licenc
-
-MIT License
+pakli -Syu                 # Rendszer frissítése
+pakli -Ss keresőszó        # Csomag keresése
+pakli -S csomagnevek       # Csomag(ok) telepítése
+pakli -R csomagnevek       # Csomag(ok) eltávolítása
+pakli -Update              # Pakli frissítése a GitHub-ról
+pakli -h                   # Súgó megjelenítése
