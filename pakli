@@ -36,7 +36,7 @@ fi
 
 if [ $# -eq 0 ]; then
     echo "Használat: pakli [parancs] [csomagok]"
-    echo "Használható parancsok: -Syu, -Ss, -S, -R, -h"
+    echo "Használható parancsok: -Syu, -Ss, -S, -R, -git, -h"
     exit 1
 fi
 
@@ -74,17 +74,13 @@ case "$1" in
             exit 1
         fi
         echo "📦 Telepítem: $@"
-        telepites_sikeres=true
-
-        case "$PKG_MANAGER" in
-            pacman) sudo pacman -S "$@" || telepites_sikeres=false ;;
-            apt) sudo apt install "$@" || telepites_sikeres=false ;;
-            dnf) sudo dnf install "$@" || telepites_sikeres=false ;;
-            zypper) sudo zypper install "$@" || telepites_sikeres=false ;;
-            apk) sudo apk add "$@" || telepites_sikeres=false ;;
-        esac
-
-        if ! $telepites_sikeres; then
+        if ! case "$PKG_MANAGER" in
+            pacman) sudo pacman -S "$@" ;;
+            apt) sudo apt install "$@" ;;
+            dnf) sudo dnf install "$@" ;;
+            zypper) sudo zypper install "$@" ;;
+            apk) sudo apk add "$@" ;;
+        esac; then
             if [[ "$PKG_MANAGER" == "pacman" ]] && ! command -v yay >/dev/null; then
                 read -p "⚠️ Nem található yay. Telepítsem? (y/n): " valasz
                 if [[ "$valasz" =~ ^[Yy]$ ]]; then
@@ -96,7 +92,7 @@ case "$1" in
             fi
             [[ "$PKG_MANAGER" == "pacman" ]] && yay -S "$@"
         fi
-
+        ;;
 
     -R)
         shift
@@ -114,31 +110,40 @@ case "$1" in
         esac
         ;;
 
-    -Update)
-        echo "🔄 Frissítés ellenőrzése a GitHub-on..."
-        TEMP_DIR=$(mktemp -d)
-        if command -v curl >/dev/null 2>&1; then
-            curl -L -o "$TEMP_DIR/pakli" https://raw.githubusercontent.com/Wardaxx-Arch/Pakli-Csomagkezelo/main/pakli
-        elif command -v wget >/dev/null 2>&1; then
-            wget -O "$TEMP_DIR/pakli" https://raw.githubusercontent.com/Wardaxx-Arch/Pakli-Csomagkezelo/main/pakli
-        else
-            echo "❌ Sem a curl, sem a wget nem érhető el."
-            rm -rf "$TEMP_DIR"
+    -git)
+        shift
+        if [ $# -eq 0 ]; then
+            echo "Kérlek add meg a GitHub repo-t formátumban (felhasználó/repo)."
             exit 1
         fi
 
-        if [ -s "$TEMP_DIR/pakli" ]; then
-            chmod +x "$TEMP_DIR/pakli"
-            sudo mv "$TEMP_DIR/pakli" /usr/local/bin/pakli
-            echo "✅ Pakli frissítve a legújabb verzióra."
+        git_repo="$1"
+        branch="main"
+        file_name="pakli.sh"
+        local_dir="$HOME/.pakli/git_repos/$git_repo"
+        local_file="$local_dir/$file_name"
+
+        mkdir -p "$local_dir"
+
+        api_url="https://api.github.com/repos/$git_repo/contents/$file_name?ref=$branch"
+
+        remote_sha=$(curl -s "$api_url" | grep -m 1 '"sha":' | cut -d '"' -f 4)
+
+        if [ ! -f "$local_file" ]; then
+            echo "📥 A fájl nem található helyben, letöltés..."
+            curl -sL "https://raw.githubusercontent.com/$git_repo/$branch/$file_name" -o "$local_file"
+            echo "✅ Letöltve: $local_file"
         else
-            echo "❌ A frissítés letöltése sikertelen."
+            local_sha=$(sha1sum "$local_file" | cut -d ' ' -f 1)
+            if [ "$local_sha" != "$remote_sha" ]; then
+                echo "🔄 Frissítés: Újabb verzió elérhető, letöltés..."
+                curl -sL "https://raw.githubusercontent.com/$git_repo/$branch/$file_name" -o "$local_file"
+                echo "✅ Frissítve: $local_file"
+            else
+                echo "✔️ A helyi fájl naprakész."
+            fi
         fi
-
-        rm -rf "$TEMP_DIR"
         ;;
-
-
 
     -h|--help)
         echo "📦 Pakli - Univerzális Linux csomagkezelő interface"
@@ -148,6 +153,7 @@ case "$1" in
         echo "  pakli -Ss kulcsszó   Csomag keresése"
         echo "  pakli -S csomag      Csomag telepítése"
         echo "  pakli -R csomag      Csomag eltávolítása"
+        echo "  pakli -git user/repo GitHub pakli.sh fájl letöltése/frissítése"
         echo "  pakli -h             Súgó"
         ;;
 
