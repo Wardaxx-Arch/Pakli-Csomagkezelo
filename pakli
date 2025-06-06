@@ -74,13 +74,17 @@ case "$1" in
             exit 1
         fi
         echo "📦 Telepítem: $@"
-        if ! case "$PKG_MANAGER" in
-            pacman) sudo pacman -S "$@" ;;
-            apt) sudo apt install "$@" ;;
-            dnf) sudo dnf install "$@" ;;
-            zypper) sudo zypper install "$@" ;;
-            apk) sudo apk add "$@" ;;
-        esac; then
+        telepites_sikeres=true
+
+        case "$PKG_MANAGER" in
+            pacman) sudo pacman -S "$@" || telepites_sikeres=false ;;
+            apt) sudo apt install "$@" || telepites_sikeres=false ;;
+            dnf) sudo dnf install "$@" || telepites_sikeres=false ;;
+            zypper) sudo zypper install "$@" || telepites_sikeres=false ;;
+            apk) sudo apk add "$@" || telepites_sikeres=false ;;
+        esac
+
+        if ! $telepites_sikeres; then
             if [[ "$PKG_MANAGER" == "pacman" ]] && ! command -v yay >/dev/null; then
                 read -p "⚠️ Nem található yay. Telepítsem? (y/n): " valasz
                 if [[ "$valasz" =~ ^[Yy]$ ]]; then
@@ -92,7 +96,7 @@ case "$1" in
             fi
             [[ "$PKG_MANAGER" == "pacman" ]] && yay -S "$@"
         fi
-        ;;
+
 
     -R)
         shift
