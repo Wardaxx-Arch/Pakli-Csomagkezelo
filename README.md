@@ -1,6 +1,6 @@
 # Pakli - Egyszerű Arch alapú csomagkezelő
 
-Ez egy egyszerű, könnyen használható csomagkezelő script Arch Linux és Arch alapú disztribúciók számára, amely automatikusan kezeli a `pacman` és az `yay` csomagokat.
+Ez egy egyszerű, könnyen használható csomagkezelő script Fedora, Debian, és Arch stb... alapú disztribúciók számára, amely automatikusan kezeli a rendszer csomagkezelőjét.
 
 ---
 
@@ -12,7 +12,7 @@ Ez egy egyszerű, könnyen használható csomagkezelő script Arch Linux és Arc
 - Csomag eltávolítása (`pakli -R csomagnevek`)
 - Csomagkezelő frissítése a GitHub-ról (`pakli -Update`)
 - Súgó megjelenítése (`pakli -h`)
-
+- Program Letöltése Githubról (`pakli -git`)
 ---
 
 ## Telepítés
@@ -44,3 +44,4 @@ pakli -S csomagnevek       # Csomag(ok) telepítése
 pakli -R csomagnevek       # Csomag(ok) eltávolítása
 pakli -Update              # Pakli frissítése a GitHub-ról
 pakli -h                   # Súgó megjelenítése
+pakli -git                 # Github repo letöltése
