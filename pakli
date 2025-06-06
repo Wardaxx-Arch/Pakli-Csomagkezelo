@@ -38,7 +38,7 @@ fi
 
 if [ $# -eq 0 ]; then
     echo "Használat: pakli [parancs] [csomagok]"
-    echo "Használható parancsok: -Syu, -Ss, -S, -R, -Update, -git, -h"
+    echo "Használható parancsok: -Syu, -Ss, -S, -R, -Update, -git, -h, -Mukodes"
     exit 1
 fi
 
@@ -116,7 +116,6 @@ case "$1" in
         ;;
 
     -Update)
-           -Update)
         echo "⬆️ A Pakli frissítése saját GitHub repo-ból..."
         "$0" -git Wardaxx-Arch/Pakli-Csomagkezelo
         if [ -f "$HOME/.pakli/git_repos/Wardaxx-Arch/Pakli-Csomagkezelo/pakli.sh" ]; then
@@ -128,7 +127,6 @@ case "$1" in
             echo "❌ Nem található a frissített fájl."
         fi
         ;;
-
 
     -git)
         shift
@@ -180,32 +178,31 @@ case "$1" in
         echo "  pakli -Update              Pakli frissítése a GitHub-ról"
         echo "  pakli -git <user/repo>     GitHub fájl letöltése/frissítése"
         echo "  pakli -h                   Súgó"
-        ;;
-
-    *)
-        echo "❌ Ismeretlen parancs: $1"
-        echo "Használd a -h opciót a segítséghez."
-        exit 1
+        echo "  pakli -Mukodes             Működés leírása"
         ;;
 
     -Mukodes)
         echo "    Pakli Működése:"
         echo
-        echo " A Pakli Érzékeli hogy milyen Linux disztrót használsz,"
-        echo " És hogyha támogatja azt a disztrót, a Pakli működni fog."
+        echo " A Pakli érzékeli, hogy milyen Linux disztrót használsz,"
+        echo " és ha támogatja azt a disztrót, a Pakli működni fog."
         echo
-        echo "Hogyha beírod Pl.: Pakli -S firefox,"
-        echo "A rendszer azt Pl.: "Pacman -S firefox-nak veszi,"
-        echo "És Így könnyebben lehet Programot Telepíteni."
+        echo "Ha beírod pl.: pakli -S firefox,"
+        echo "a rendszer azt pl.: \"pacman -S firefox\"-nak veszi,"
+        echo "és így könnyebben lehet programot telepíteni."
         echo
-        echo "A Pakli azt is csinálja, hogyha megpróbálsz valamit letölteni,"
-        echo "Megpróbálja Pl.: Archon Ilyen sorrendben:"
-        echo "Pacman -S google-chrome" (Nem találja)
-        echo "Yay -S google-chrome (Megtalálta)"
+        echo "A Pakli azt is csinálja, hogy ha megpróbálsz valamit letölteni,"
+        echo "megpróbálja pl. Archon ilyen sorrendben:"
+        echo "pacman -S google-chrome (ha nem találja)"
+        echo "yay -S google-chrome (ha megtalálja)"
         echo
-        echo "Hogyha YAY nincs telepítve, és onnan szeretnél letölteni, telepítí magától a YAY-t is."
+        echo "Ha a yay nincs telepítve, és onnan szeretnél letölteni, telepíti magától a yay-t is."
         echo
         echo "Wardaxx 2025"
         ;;
-
+    *)
+        echo "❌ Ismeretlen parancs: $1"
+        echo "Használd a -h opciót a segítséghez."
+        exit 1
+        ;;
 esac
