@@ -116,45 +116,19 @@ case "$1" in
         ;;
 
     -Update)
-        echo "🔍 Frissítés keresése a GitHub-on..."
-        # ideiglenes fájl
-        TEMP_FILE=$(mktemp)
-        if command -v curl >/dev/null 2>&1; then
-            curl -sL "$GITHUB_RAW_URL" -o "$TEMP_FILE"
-        elif command -v wget >/dev/null 2>&1; then
-            wget -qO "$TEMP_FILE" "$GITHUB_RAW_URL"
+           -Update)
+        echo "⬆️ A Pakli frissítése saját GitHub repo-ból..."
+        "$0" -git Wardaxx-Arch/Pakli-Csomagkezelo
+        if [ -f "$HOME/.pakli/git_repos/Wardaxx-Arch/Pakli-Csomagkezelo/pakli.sh" ]; then
+            echo "📁 Másolás: /usr/local/bin/pakli"
+            sudo cp "$HOME/.pakli/git_repos/Wardaxx-Arch/Pakli-Csomagkezelo/pakli.sh" /usr/local/bin/pakli
+            sudo chmod +x /usr/local/bin/pakli
+            echo "✅ Update sikeres és globálisan telepítve."
         else
-            echo "❌ Sem curl, sem wget nem található."
-            exit 1
-        fi
-
-        if [ ! -s "$TEMP_FILE" ]; then
-            echo "❌ A frissítés letöltése sikertelen."
-            rm -f "$TEMP_FILE"
-            exit 1
-        fi
-
-        # Ha még nincs telepítve, egyszerűen telepítjük
-        if [ ! -f "$INSTALL_PATH" ]; then
-            echo "🚚 Telepítés: /usr/local/bin/pakli"
-            sudo mv "$TEMP_FILE" "$INSTALL_PATH"
-            sudo chmod +x "$INSTALL_PATH"
-            echo "✅ Pakli telepítve a legújabb verzióval."
-        else
-            # Ha már létezik, összehasonlítjuk SHA1-gyel
-            local_sha=$(sha1sum "$INSTALL_PATH" | cut -d' ' -f1)
-            new_sha=$(sha1sum "$TEMP_FILE" | cut -d' ' -f1)
-            if [ "$local_sha" != "$new_sha" ]; then
-                echo "⬆️ Frissítés telepítése..."
-                sudo mv "$TEMP_FILE" "$INSTALL_PATH"
-                sudo chmod +x "$INSTALL_PATH"
-                echo "✅ Pakli frissítve."
-            else
-                echo "✅ Már a legfrissebb verzió fut."
-                rm -f "$TEMP_FILE"
-            fi
+            echo "❌ Nem található a frissített fájl."
         fi
         ;;
+
 
     -git)
         shift
@@ -213,4 +187,25 @@ case "$1" in
         echo "Használd a -h opciót a segítséghez."
         exit 1
         ;;
+
+    -Mukodes)
+        echo "    Pakli Működése:"
+        echo
+        echo " A Pakli Érzékeli hogy milyen Linux disztrót használsz,"
+        echo " És hogyha támogatja azt a disztrót, a Pakli működni fog."
+        echo
+        echo "Hogyha beírod Pl.: Pakli -S firefox,"
+        echo "A rendszer azt Pl.: "Pacman -S firefox-nak veszi,"
+        echo "És Így könnyebben lehet Programot Telepíteni."
+        echo
+        echo "A Pakli azt is csinálja, hogyha megpróbálsz valamit letölteni,"
+        echo "Megpróbálja Pl.: Archon Ilyen sorrendben:"
+        echo "Pacman -S google-chrome" (Nem találja)
+        echo "Yay -S google-chrome (Megtalálta)"
+        echo
+        echo "Hogyha YAY nincs telepítve, és onnan szeretnél letölteni, telepítí magától a YAY-t is."
+        echo
+        echo "Wardaxx 2025"
+        ;;
+
 esac
