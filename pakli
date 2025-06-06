@@ -114,6 +114,32 @@ case "$1" in
         esac
         ;;
 
+    -Update)
+        echo "🔄 Frissítés ellenőrzése a GitHub-on..."
+        TEMP_DIR=$(mktemp -d)
+        if command -v curl >/dev/null 2>&1; then
+            curl -L -o "$TEMP_DIR/pakli" https://raw.githubusercontent.com/Wardaxx-Arch/Pakli-Csomagkezelo/main/pakli
+        elif command -v wget >/dev/null 2>&1; then
+            wget -O "$TEMP_DIR/pakli" https://raw.githubusercontent.com/Wardaxx-Arch/Pakli-Csomagkezelo/main/pakli
+        else
+            echo "❌ Sem a curl, sem a wget nem érhető el."
+            rm -rf "$TEMP_DIR"
+            exit 1
+        fi
+
+        if [ -s "$TEMP_DIR/pakli" ]; then
+            chmod +x "$TEMP_DIR/pakli"
+            sudo mv "$TEMP_DIR/pakli" /usr/local/bin/pakli
+            echo "✅ Pakli frissítve a legújabb verzióra."
+        else
+            echo "❌ A frissítés letöltése sikertelen."
+        fi
+
+        rm -rf "$TEMP_DIR"
+        ;;
+
+
+
     -h|--help)
         echo "📦 Pakli - Univerzális Linux csomagkezelő interface"
         echo ""
