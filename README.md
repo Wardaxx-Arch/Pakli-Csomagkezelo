@@ -17,21 +17,13 @@ Ez egy egyszerű, könnyen használható csomagkezelő script Fedora, Debian, é
 
 ## Telepítés
 
-1. Klónozd a repót:
-    ```bash
-    git clone https://github.com/Wardaxx-Arch/Pakli-Csomagkezelo.git
-    cd Pakli-Csomagkezelo
-    ```
-
-2. Add futtatási jogosultságot a `pakli` scriptnek:
-    ```bash
-    chmod +x pakli
-    ```
-
-3. Másold a `pakli` scriptet egy PATH-ban lévő helyre, pl.:
-    ```bash
-    sudo cp pakli /usr/local/bin/
-    ```
+1. Töltsd le az Installert
+2. Ellenőrizd hogy futtatható-e
+   `chmod +x install`
+3. Futtasd a Telepítőt
+   `bash ./install`
+4. Ellenőrizd hogy működik-e
+   `pakli -h`
 
 ---
 
