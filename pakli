@@ -28,6 +28,8 @@ detect_package_manager() {
 }
 
 PKG_MANAGER=$(detect_package_manager)
+INSTALL_PATH="/usr/local/bin/pakli"
+GITHUB_RAW_URL="https://raw.githubusercontent.com/Wardaxx-Arch/Pakli-Csomagkezelo/main/pakli"
 
 if [ -z "$PKG_MANAGER" ]; then
     echo "❌ Nem található támogatott csomagkezelő ezen a rendszeren."
@@ -36,7 +38,7 @@ fi
 
 if [ $# -eq 0 ]; then
     echo "Használat: pakli [parancs] [csomagok]"
-    echo "Használható parancsok: -Syu, -Ss, -S, -R, -git, -h"
+    echo "Használható parancsok: -Syu, -Ss, -S, -R, -Update, -git, -h"
     exit 1
 fi
 
@@ -74,13 +76,16 @@ case "$1" in
             exit 1
         fi
         echo "📦 Telepítem: $@"
-        if ! case "$PKG_MANAGER" in
-            pacman) sudo pacman -S "$@" ;;
-            apt) sudo apt install "$@" ;;
-            dnf) sudo dnf install "$@" ;;
-            zypper) sudo zypper install "$@" ;;
-            apk) sudo apk add "$@" ;;
-        esac; then
+        telepites_sikeres=true
+        case "$PKG_MANAGER" in
+            pacman) sudo pacman -S "$@" || telepites_sikeres=false ;;
+            apt) sudo apt install "$@" || telepites_sikeres=false ;;
+            dnf) sudo dnf install "$@" || telepites_sikeres=false ;;
+            zypper) sudo zypper install "$@" || telepites_sikeres=false ;;
+            apk) sudo apk add "$@" || telepites_sikeres=false ;;
+        esac
+
+        if ! $telepites_sikeres; then
             if [[ "$PKG_MANAGER" == "pacman" ]] && ! command -v yay >/dev/null; then
                 read -p "⚠️ Nem található yay. Telepítsem? (y/n): " valasz
                 if [[ "$valasz" =~ ^[Yy]$ ]]; then
@@ -110,6 +115,47 @@ case "$1" in
         esac
         ;;
 
+    -Update)
+        echo "🔍 Frissítés keresése a GitHub-on..."
+        # ideiglenes fájl
+        TEMP_FILE=$(mktemp)
+        if command -v curl >/dev/null 2>&1; then
+            curl -sL "$GITHUB_RAW_URL" -o "$TEMP_FILE"
+        elif command -v wget >/dev/null 2>&1; then
+            wget -qO "$TEMP_FILE" "$GITHUB_RAW_URL"
+        else
+            echo "❌ Sem curl, sem wget nem található."
+            exit 1
+        fi
+
+        if [ ! -s "$TEMP_FILE" ]; then
+            echo "❌ A frissítés letöltése sikertelen."
+            rm -f "$TEMP_FILE"
+            exit 1
+        fi
+
+        # Ha még nincs telepítve, egyszerűen telepítjük
+        if [ ! -f "$INSTALL_PATH" ]; then
+            echo "🚚 Telepítés: /usr/local/bin/pakli"
+            sudo mv "$TEMP_FILE" "$INSTALL_PATH"
+            sudo chmod +x "$INSTALL_PATH"
+            echo "✅ Pakli telepítve a legújabb verzióval."
+        else
+            # Ha már létezik, összehasonlítjuk SHA1-gyel
+            local_sha=$(sha1sum "$INSTALL_PATH" | cut -d' ' -f1)
+            new_sha=$(sha1sum "$TEMP_FILE" | cut -d' ' -f1)
+            if [ "$local_sha" != "$new_sha" ]; then
+                echo "⬆️ Frissítés telepítése..."
+                sudo mv "$TEMP_FILE" "$INSTALL_PATH"
+                sudo chmod +x "$INSTALL_PATH"
+                echo "✅ Pakli frissítve."
+            else
+                echo "✅ Már a legfrissebb verzió fut."
+                rm -f "$TEMP_FILE"
+            fi
+        fi
+        ;;
+
     -git)
         shift
         if [ $# -eq 0 ]; then
@@ -126,21 +172,25 @@ case "$1" in
         mkdir -p "$local_dir"
 
         api_url="https://api.github.com/repos/$git_repo/contents/$file_name?ref=$branch"
+        remote_sha=$(curl -s "$api_url" | grep -m 1 '"sha":' | cut -d '"' -f4)
 
-        remote_sha=$(curl -s "$api_url" | grep -m 1 '"sha":' | cut -d '"' -f 4)
+        if [ -z "$remote_sha" ]; then
+            echo "❌ A GitHub API nem találta a fájlt: $file_name"
+            exit 1
+        fi
 
         if [ ! -f "$local_file" ]; then
             echo "📥 A fájl nem található helyben, letöltés..."
             curl -sL "https://raw.githubusercontent.com/$git_repo/$branch/$file_name" -o "$local_file"
             echo "✅ Letöltve: $local_file"
         else
-            local_sha=$(sha1sum "$local_file" | cut -d ' ' -f 1)
+            local_sha=$(sha1sum "$local_file" | cut -d ' ' -f1)
             if [ "$local_sha" != "$remote_sha" ]; then
                 echo "🔄 Frissítés: Újabb verzió elérhető, letöltés..."
                 curl -sL "https://raw.githubusercontent.com/$git_repo/$branch/$file_name" -o "$local_file"
                 echo "✅ Frissítve: $local_file"
             else
-                echo "✔️ A helyi fájl naprakész."
+                echo "✔️ A helyi fájl naprakész: $local_file"
             fi
         fi
         ;;
@@ -149,12 +199,13 @@ case "$1" in
         echo "📦 Pakli - Univerzális Linux csomagkezelő interface"
         echo ""
         echo "Használat:"
-        echo "  pakli -Syu           Frissíti a rendszert"
-        echo "  pakli -Ss kulcsszó   Csomag keresése"
-        echo "  pakli -S csomag      Csomag telepítése"
-        echo "  pakli -R csomag      Csomag eltávolítása"
-        echo "  pakli -git user/repo GitHub pakli.sh fájl letöltése/frissítése"
-        echo "  pakli -h             Súgó"
+        echo "  pakli -Syu                 Frissíti a rendszert"
+        echo "  pakli -Ss <kulcsszó>       Csomag keresése"
+        echo "  pakli -S <csomag>          Csomag telepítése"
+        echo "  pakli -R <csomag>          Csomag eltávolítása"
+        echo "  pakli -Update              Pakli frissítése a GitHub-ról"
+        echo "  pakli -git <user/repo>     GitHub fájl letöltése/frissítése"
+        echo "  pakli -h                   Súgó"
         ;;
 
     *)
