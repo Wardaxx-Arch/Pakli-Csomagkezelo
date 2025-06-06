@@ -115,57 +115,57 @@ case "$1" in
         esac
         ;;
 
-  -Update)
-    echo "⬆️ A Pakli frissítése saját GitHub repo-ból..."
-    "$0" -git Wardaxx-Arch/Pakli-Csomagkezelo
-    if [ -f "$HOME/.pakli/git_repos/Wardaxx-Arch/Pakli-Csomagkezelo/pakli" ]; then
-        echo "📁 Másolás: /usr/local/bin/pakli"
-        sudo cp "$HOME/.pakli/git_repos/Wardaxx-Arch/Pakli-Csomagkezelo/pakli" /usr/local/bin/pakli
-        sudo chmod +x /usr/local/bin/pakli
-        echo "✅ Update sikeres és globálisan telepítve."
-    else
-        echo "❌ Nem található a frissített fájl."
-    fi
-    ;;
-
--git)
-    shift
-    if [ $# -eq 0 ]; then
-        echo "Kérlek add meg a GitHub repo-t formátumban (felhasználó/repo)."
-        exit 1
-    fi
-
-    git_repo="$1"
-    branch="main"
-    file_name="pakli"
-    local_dir="$HOME/.pakli/git_repos/$git_repo"
-    local_file="$local_dir/$file_name"
-
-    mkdir -p "$local_dir"
-
-    api_url="https://api.github.com/repos/$git_repo/contents/$file_name?ref=$branch"
-    remote_sha=$(curl -s "$api_url" | grep -m 1 '"sha":' | cut -d '"' -f4)
-
-    if [ -z "$remote_sha" ]; then
-        echo "❌ A GitHub API nem találta a fájlt: $file_name"
-        exit 1
-    fi
-
-    if [ ! -f "$local_file" ]; then
-        echo "📥 A fájl nem található helyben, letöltés..."
-        curl -sL "https://raw.githubusercontent.com/$git_repo/$branch/$file_name" -o "$local_file"
-        echo "✅ Letöltve: $local_file"
-    else
-        local_sha=$(sha1sum "$local_file" | cut -d ' ' -f1)
-        if [ "$local_sha" != "$remote_sha" ]; then
-            echo "🔄 Frissítés: Újabb verzió elérhető, letöltés..."
-            curl -sL "https://raw.githubusercontent.com/$git_repo/$branch/$file_name" -o "$local_file"
-            echo "✅ Frissítve: $local_file"
+    -Update)
+        echo "⬆️ A Pakli frissítése saját GitHub repo-ból..."
+        "$0" -git Wardaxx-Arch/Pakli-Csomagkezelo
+        if [ -f "$HOME/.pakli/git_repos/Wardaxx-Arch/Pakli-Csomagkezelo/pakli" ]; then
+            echo "📁 Másolás: /usr/local/bin/pakli"
+            sudo cp "$HOME/.pakli/git_repos/Wardaxx-Arch/Pakli-Csomagkezelo/pakli" /usr/local/bin/pakli
+            sudo chmod +x /usr/local/bin/pakli
+            echo "✅ Update sikeres és globálisan telepítve."
         else
-            echo "✔️ A helyi fájl naprakész: $local_file"
+            echo "❌ Nem található a frissített fájl."
         fi
-    fi
-    ;;
+        ;;
+
+    -git)
+        shift
+        if [ $# -eq 0 ]; then
+            echo "Kérlek add meg a GitHub repo-t formátumban (felhasználó/repo)."
+            exit 1
+        fi
+
+        git_repo="$1"
+        branch="main"
+        file_name="pakli"
+        local_dir="$HOME/.pakli/git_repos/$git_repo"
+        local_file="$local_dir/$file_name"
+
+        mkdir -p "$local_dir"
+
+        api_url="https://api.github.com/repos/$git_repo/contents/$file_name?ref=$branch"
+        remote_sha=$(curl -s "$api_url" | grep -m 1 '"sha":' | cut -d '"' -f4)
+
+        if [ -z "$remote_sha" ]; then
+            echo "❌ A GitHub API nem találta a fájlt: $file_name"
+            exit 1
+        fi
+
+        if [ ! -f "$local_file" ]; then
+            echo "📥 A fájl nem található helyben, letöltés..."
+            curl -sL "https://raw.githubusercontent.com/$git_repo/$branch/$file_name" -o "$local_file"
+            echo "✅ Letöltve: $local_file"
+        else
+            local_sha=$(sha1sum "$local_file" | cut -d ' ' -f1)
+            if [ "$local_sha" != "$remote_sha" ]; then
+                echo "🔄 Frissítés: Újabb verzió elérhető, letöltés..."
+                curl -sL "https://raw.githubusercontent.com/$git_repo/$branch/$file_name" -o "$local_file"
+                echo "✅ Frissítve: $local_file"
+            else
+                echo "✔️ A helyi fájl naprakész: $local_file"
+            fi
+        fi
+        ;;
 
     -h|--help)
         echo "📦 Pakli - Univerzális Linux csomagkezelő interface"
@@ -200,6 +200,7 @@ case "$1" in
         echo
         echo "Wardaxx 2025"
         ;;
+
     *)
         echo "❌ Ismeretlen parancs: $1"
         echo "Használd a -h opciót a segítséghez."
