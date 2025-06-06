@@ -115,18 +115,27 @@ case "$1" in
         esac
         ;;
 
-    -Update)
-        echo "⬆️ A Pakli frissítése saját GitHub repo-ból..."
-        "$0" -git Wardaxx-Arch/Pakli-Csomagkezelo
-        if [ -f "$HOME/.pakli/git_repos/Wardaxx-Arch/Pakli-Csomagkezelo/pakli" ]; then
-            echo "📁 Másolás: /usr/local/bin/pakli"
-            sudo cp "$HOME/.pakli/git_repos/Wardaxx-Arch/Pakli-Csomagkezelo/pakli" /usr/local/bin/pakli
-            sudo chmod +x /usr/local/bin/pakli
-            echo "✅ Update sikeres és globálisan telepítve."
-        else
-            echo "❌ Nem található a frissített fájl."
-        fi
-        ;;
+-Update)
+    echo "⬆️ A Pakli frissítése saját GitHub repo-ból..."
+    # Klónozás vagy frissítés
+    REPO_DIR="$HOME/.pakli/git_repos/Wardaxx-Arch/Pakli-Csomagkezelo"
+    if [ -d "$REPO_DIR/.git" ]; then
+        echo "📥 Frissítés git pull-lal..."
+        git -C "$REPO_DIR" pull
+    else
+        echo "📥 Klónozás..."
+        git clone https://github.com/Wardaxx-Arch/Pakli-Csomagkezelo.git "$REPO_DIR"
+    fi
+
+    if [ -f "$REPO_DIR/pakli" ]; then
+        echo "📁 Másolás: /usr/local/bin/pakli"
+        sudo cp "$REPO_DIR/pakli" /usr/local/bin/pakli
+        sudo chmod +x /usr/local/bin/pakli
+        echo "✅ Update sikeres és globálisan telepítve."
+    else
+        echo "❌ Nem található a frissített fájl."
+    fi
+    ;;
 
     -git)
         shift
