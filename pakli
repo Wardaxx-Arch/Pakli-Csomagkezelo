@@ -27,6 +27,7 @@ detect_package_manager() {
     fi
 }
 
+LOGFILE="$HOME/.pakli_history.txt"
 PKG_MANAGER=$(detect_package_manager)
 INSTALL_PATH="/usr/local/bin/pakli"
 GITHUB_RAW_URL="https://raw.githubusercontent.com/Wardaxx-Arch/Pakli-Csomagkezelo/main/pakli"
@@ -38,7 +39,7 @@ fi
 
 if [ $# -eq 0 ]; then
     echo "Használat: pakli [parancs] [csomagok]"
-    echo "Használható parancsok: -Syu, -Ss, -S, -R, -Update, -git, -h, -Mukodes"
+    echo "Használható parancsok: -Syu, -Ss, -S, -R, -Update, -git, -h, -Mukodes, -suggest, -history"
     exit 1
 fi
 
@@ -76,6 +77,7 @@ case "$1" in
             exit 1
         fi
         echo "📦 Telepítem: $@"
+        echo "[`date`] Telepítve: $*" >> "$LOGFILE"
         telepites_sikeres=true
         case "$PKG_MANAGER" in
             pacman) sudo pacman -S "$@" || telepites_sikeres=false ;;
@@ -106,6 +108,7 @@ case "$1" in
             exit 1
         fi
         echo "🗑️ Eltávolítom: $@"
+        echo "[`date`] Eltávolítva: $*" >> "$LOGFILE"
         case "$PKG_MANAGER" in
             pacman) sudo pacman -R "$@" ;;
             apt) sudo apt remove "$@" ;;
@@ -115,27 +118,25 @@ case "$1" in
         esac
         ;;
 
--Update)
-    echo "⬆️ A Pakli frissítése saját GitHub repo-ból..."
-    # Klónozás vagy frissítés
-    REPO_DIR="$HOME/.pakli/git_repos/Wardaxx-Arch/Pakli-Csomagkezelo"
-    if [ -d "$REPO_DIR/.git" ]; then
-        echo "📥 Frissítés git pull-lal..."
-        git -C "$REPO_DIR" pull
-    else
-        echo "📥 Klónozás..."
-        git clone https://github.com/Wardaxx-Arch/Pakli-Csomagkezelo.git "$REPO_DIR"
-    fi
-
-    if [ -f "$REPO_DIR/pakli" ]; then
-        echo "📁 Másolás: /usr/local/bin/pakli"
-        sudo cp "$REPO_DIR/pakli" /usr/local/bin/pakli
-        sudo chmod +x /usr/local/bin/pakli
-        echo "✅ Update sikeres és globálisan telepítve."
-    else
-        echo "❌ Nem található a frissített fájl."
-    fi
-    ;;
+    -Update)
+        echo "⬆️ A Pakli frissítése saját GitHub repo-ból..."
+        REPO_DIR="$HOME/.pakli/git_repos/Wardaxx-Arch/Pakli-Csomagkezelo"
+        if [ -d "$REPO_DIR/.git" ]; then
+            echo "📥 Frissítés git pull-lal..."
+            git -C "$REPO_DIR" pull
+        else
+            echo "📥 Klónozás..."
+            git clone https://github.com/Wardaxx-Arch/Pakli-Csomagkezelo.git "$REPO_DIR"
+        fi
+        if [ -f "$REPO_DIR/pakli" ]; then
+            echo "📁 Másolás: /usr/local/bin/pakli"
+            sudo cp "$REPO_DIR/pakli" /usr/local/bin/pakli
+            sudo chmod +x /usr/local/bin/pakli
+            echo "✅ Update sikeres és globálisan telepítve."
+        else
+            echo "❌ Nem található a frissített fájl."
+        fi
+        ;;
 
     -git)
         shift
@@ -143,23 +144,18 @@ case "$1" in
             echo "Kérlek add meg a GitHub repo-t formátumban (felhasználó/repo)."
             exit 1
         fi
-
         git_repo="$1"
         branch="main"
         file_name="pakli"
         local_dir="$HOME/.pakli/git_repos/$git_repo"
         local_file="$local_dir/$file_name"
-
         mkdir -p "$local_dir"
-
         api_url="https://api.github.com/repos/$git_repo/contents/$file_name?ref=$branch"
         remote_sha=$(curl -s "$api_url" | grep -m 1 '"sha":' | cut -d '"' -f4)
-
         if [ -z "$remote_sha" ]; then
             echo "❌ A GitHub API nem találta a fájlt: $file_name"
             exit 1
         fi
-
         if [ ! -f "$local_file" ]; then
             echo "📥 A fájl nem található helyben, letöltés..."
             curl -sL "https://raw.githubusercontent.com/$git_repo/$branch/$file_name" -o "$local_file"
@@ -176,17 +172,62 @@ case "$1" in
         fi
         ;;
 
+    -suggest)
+        echo "🎯 Ajánlott csomagok:"
+        case "$PKG_MANAGER" in
+            pacman|yay)
+                echo "  - firefox"
+                echo "  - gimp"
+                echo "  - vlc"
+                echo "  - htop"
+                echo "  - neofetch"
+                ;;
+            apt)
+                echo "  - gnome-software"
+                echo "  - gparted"
+                echo "  - vlc"
+                echo "  - neofetch"
+                echo "  - htop"
+                ;;
+            dnf)
+                echo "  - gimp"
+                echo "  - vlc"
+                echo "  - neofetch"
+                ;;
+            zypper)
+                echo "  - vlc"
+                echo "  - htop"
+                echo "  - neofetch"
+                ;;
+            apk)
+                echo "  - htop"
+                echo "  - curl"
+                echo "  - nano"
+                ;;
+        esac
+        ;;
+
+    -history)
+        if [ -f "$LOGFILE" ]; then
+            echo "📜 Telepítési előzmények:"
+            cat "$LOGFILE"
+        else
+            echo "ℹ️ Nincs előzmény naplózva még."
+        fi
+        ;;
+
     -h|--help)
         echo "📦 Pakli - Univerzális Linux csomagkezelő interface"
         echo ""
         echo "Használat:"
-        echo "  pakli -Syu                 Frissíti a rendszert"
-        echo "  pakli -Ss <kulcsszó>       Csomag keresése"
-        echo "  pakli -S <csomag>          Csomag telepítése"
-        echo "  pakli -R <csomag>          Csomag eltávolítása"
-        echo "  pakli -Update              Pakli frissítése a GitHub-ról"
-        echo "  pakli -git <user/repo>     GitHub fájl letöltése/frissítése"
-        echo "  pakli -h                   Súgó"
+        echo "  pakli -Syu                 Rendszer frissítése"
+        echo "  pakli -Ss <kulcsszó>       Keresés"
+        echo "  pakli -S <csomag>          Telepítés"
+        echo "  pakli -R <csomag>          Eltávolítás"
+        echo "  pakli -Update              Saját frissítés"
+        echo "  pakli -git <user/repo>     GitHub fájl frissítés"
+        echo "  pakli -suggest             Ajánlott csomagok"
+        echo "  pakli -history             Telepítési előzmények"
         echo "  pakli -Mukodes             Működés leírása"
         ;;
 
@@ -194,20 +235,13 @@ case "$1" in
         echo "    Pakli Működése:"
         echo
         echo " A Pakli érzékeli, hogy milyen Linux disztrót használsz,"
-        echo " és ha támogatja azt a disztrót, a Pakli működni fog."
+        echo " és ha támogatja azt a disztrót, működni fog."
         echo
         echo "Ha beírod pl.: pakli -S firefox,"
-        echo "a rendszer azt pl.: \"pacman -S firefox\"-nak veszi,"
+        echo "akkor ez lefordul pl.: \"pacman -S firefox\"-ra,"
         echo "és így könnyebben lehet programot telepíteni."
         echo
-        echo "A Pakli azt is csinálja, hogy ha megpróbálsz valamit letölteni,"
-        echo "megpróbálja pl. Archon ilyen sorrendben:"
-        echo "pacman -S google-chrome (ha nem találja)"
-        echo "yay -S google-chrome (ha megtalálja)"
-        echo
-        echo "Ha a yay nincs telepítve, és onnan szeretnél letölteni, telepíti magától a yay-t is."
-        echo
-        echo "Wardaxx 2025"
+        echo "Ha a yay nincs telepítve Arch rendszeren, kérésre telepíti."
         ;;
 
     *)
