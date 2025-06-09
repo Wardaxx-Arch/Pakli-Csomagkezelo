@@ -118,7 +118,7 @@ case "$1" in
         esac
         ;;
 
-    -Update)
+        -Update)
         echo "⬆️ A Pakli frissítése saját GitHub repo-ból..."
         REPO_DIR="$HOME/.pakli/git_repos/Wardaxx-Arch/Pakli-Csomagkezelo"
         if [ -d "$REPO_DIR/.git" ]; then
@@ -140,13 +140,13 @@ case "$1" in
 
     -git)
         shift
-        if [ $# -eq 0 ]; then
-            echo "Kérlek add meg a GitHub repo-t formátumban (felhasználó/repo)."
+        if [ $# -lt 2 ]; then
+            echo "Használat: pakli -git <felhasznalo/repo> <fajlnev> [branch]"
             exit 1
         fi
         git_repo="$1"
-        branch="main"
-        file_name="pakli"
+        file_name="$2"
+        branch="${3:-main}"
         local_dir="$HOME/.pakli/git_repos/$git_repo"
         local_file="$local_dir/$file_name"
         mkdir -p "$local_dir"
@@ -161,6 +161,7 @@ case "$1" in
             curl -sL "https://raw.githubusercontent.com/$git_repo/$branch/$file_name" -o "$local_file"
             echo "✅ Letöltve: $local_file"
         else
+            # Helyi SHA-t base64-ben kell hasonlítani a GitHub API SHA-hoz
             local_sha=$(sha1sum "$local_file" | cut -d ' ' -f1)
             if [ "$local_sha" != "$remote_sha" ]; then
                 echo "🔄 Frissítés: Újabb verzió elérhető, letöltés..."
