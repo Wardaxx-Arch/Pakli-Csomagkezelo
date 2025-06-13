@@ -124,6 +124,8 @@ case "$1" in
     REPO_URL="https://github.com/Wardaxx-Arch/Pakli-Csomagkezelo.git"
     LOCAL_PATH="$HOME/.pakli/git_repos/Pakli"
 
+    echo "ℹ️ Frissítés helye: $LOCAL_PATH"
+
     # Ha már létezik a bináris: töröljük
     if [ -f "/usr/local/bin/pakli" ]; then
         echo "🗑️ Régi verzió törlése: /usr/local/bin/pakli"
@@ -140,7 +142,7 @@ case "$1" in
         git clone "$REPO_URL" "$LOCAL_PATH"
     fi
 
-    # Új verzió bemásolása
+    # Ellenőrizzük, hogy ott van-e a fájl
     if [ -f "$LOCAL_PATH/pakli" ]; then
         echo "📁 Új verzió másolása: /usr/local/bin/pakli"
         sudo cp "$LOCAL_PATH/pakli" /usr/local/bin/pakli
@@ -148,8 +150,10 @@ case "$1" in
         echo "✅ Sikeres frissítés és telepítés."
     else
         echo "❌ Nem található az új pakli fájl ($LOCAL_PATH/pakli)"
+        echo "ℹ️ Az aktuális mappa tartalma: $(ls -l "$LOCAL_PATH")"
     fi
-    ;;
+;;
+
 
 
     -git)
